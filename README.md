@@ -1,3 +1,12 @@
+```text
+██   ██  █████  ██████  ███    ███  ██████  ███    ██ ██    ██ 
+██   ██ ██   ██ ██   ██ ████  ████ ██    ██ ████   ██  ██  ██  
+███████ ███████ ██████  ██ ████ ██ ██    ██ ██ ██  ██   ████   
+██   ██ ██   ██ ██   ██ ██  ██  ██ ██    ██ ██  ██ ██    ██    
+██   ██ ██   ██ ██   ██ ██      ██  ██████  ██   ████    ██    
+                                                                                                                 
+```
+
 Universal Influenza Hemagglutinin Numbering, Antigenic Annotation, and Comparative Evolution Engine.
 
 ## Overview
@@ -8,17 +17,23 @@ HArmony resolves this sequence-to-structure alignment problem by deploying pre-t
 
 ## Key Capabilities
 
-**Universal Structural Grid:** Transposes any input HA sequence into H3-standardized coordinates, leveraging HMMER-derived posterior probabilities to assign per-residue confidence scores.
+### Universal Structural Grid:
+Transposes any input HA sequence into H3-standardized coordinates, leveraging HMMER-derived posterior probabilities to assign per-residue confidence scores.
 
-**Antigenic Topology Mapping:** Automatically annotates structural domains (HA1/HA2) and maps residues against the canonical Burke and Smith (1994) antigenic sites (A-E) on the globular head.
+### Antigenic Topology Mapping:
+Automatically annotates structural domains (HA1/HA2) and maps residues against the canonical Burke and Smith (1994) antigenic sites (A-E) on the globular head.
 
-**Glycan Shield Profiling:** Detects classical N-linked glycosylation sequons (N-X-[S/T], where X != P) and computes de novo gain/loss dynamics relative to the reference state or a paired sequence.
+### Glycan Shield Profiling:
+Detects classical N-linked glycosylation sequons (N-X-[S/T], where X != P) and computes de novo gain/loss dynamics relative to the reference state or a paired sequence.
 
-**Pathogenicity Motif Diagnostics:** Scans the HA1/HA2 junction for polybasic cleavage site (PBCS) expansions and furin-recognition motifs to robustly stratify Highly Pathogenic (HPAI) versus Low Pathogenic (LPAI) signatures.
+### Pathogenicity Motif Diagnostics:
+Scans the HA1/HA2 junction for polybasic cleavage site (PBCS) expansions and furin-recognition motifs to robustly stratify Highly Pathogenic (HPAI) versus Low Pathogenic (LPAI) signatures.
 
-**Evolutionary Compare Module:** Executes coordinate-level pairwise comparative analyses to precisely quantify structural drift, receptor-binding site (RBS) mutations, and shifts in glycan shielding.
+### Evolutionary Compare Module:
+Executes coordinate-level pairwise comparative analyses to precisely quantify structural drift, receptor-binding site (RBS) mutations, and shifts in glycan shielding.
 
-**Publication-Grade Visualizations:** Automates the generation of linear protein feature maps and stacked mirror alignments using matplotlib, detailing mutational hotspots directly on the structural topology.
+### Publication-Grade Visualizations:
+Automates the generation of linear protein feature maps and stacked mirror alignments using matplotlib, detailing mutational hotspots directly on the structural topology.
 
 ## Installation
 
@@ -27,7 +42,7 @@ HArmony relies on the HMMER suite (`hmmsearch`) for probabilistic modeling. We h
 ```bash
 # 1. Clone the repository
 git clone https://github.com/franzdietzmeyer/harmony.git
-cd harmony
+cd HArmony
 
 # 2. Create the isolated Conda environment
 conda env create -f environment.yml
