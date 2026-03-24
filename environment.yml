@@ -1,0 +1,15 @@
+name: harmony-env
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python>=3.9
+  - hmmer>=3.3.2
+  - pandas
+  - matplotlib
+  - typer
+  - rich
+  - pip
+  - pip:
+      - -e .

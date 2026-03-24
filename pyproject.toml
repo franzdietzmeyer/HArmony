@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "harmony"
+version = "0.1.0"
+description = "High-throughput Influenza A HA renumbering to H3 coordinates via Profile HMM."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pyhmmer",
+    "biopython",
+    "typer",
+    "rich",
+    "matplotlib",
+]
+
+[project.scripts]
+harmony = "harmony.cli:app"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]

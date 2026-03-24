@@ -1,0 +1,5 @@
+pyhmmer
+biopython
+typer
+rich
+matplotlib

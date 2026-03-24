@@ -1,0 +1,15 @@
+# target name                    accession  query name           accession  hmmfrom hmm to alifrom  ali to envfrom  env to  sq len strand   E-value  score  bias  description of target
+#            ------------------- ---------- -------------------- ---------- ------- ------- ------- ------- ------- ------- ------- ------ --------- ------ ----- ---------------------
+1390.SAMEA104415756.OFHT01000022 -          bmyD                 -              850    1193  185917  185577  185953  185567  391023    -     1.2e-07   24.6   3.3  -
+1390.SAMEA104415756.OFHT01000022 -          bmyD                 -             1126    1185  313367  313308  313387  313294  391023    -      0.0063    8.9   1.2  -
+1390.SAMEA104415756.OFHT01000022 -          bmyD                 -              517     581  315063  314996  315081  314978  391023    -         1.4    1.1   0.5  -
+#
+# Program:         nhmmer
+# Version:         3.4 (Aug 2023)
+# Pipeline mode:   SEARCH
+# Query file:      ../hmms/txt/bmyD.hmm
+# Target file:     1390.SAMEA104415756.OFHT01000022.fna
+# Option settings: nhmmer --tblout ../tables/bmyD2.tbl --noali ../hmms/txt/bmyD.hmm 1390.SAMEA104415756.OFHT01000022.fna 
+# Current dir:     /home/althonos/Code/pyhmmer/pyhmmer/tests/data/seqs
+# Date:            Thu Mar 28 18:05:54 2024
+# [ok]
