@@ -1,80 +1,85 @@
-```text
-   ________   __  ___  ___    ____ 
-  / ____/ /  / / / /  |/  /   / __ \
- / /_  / /  / / / / /|_/ /   / /_/ /
-/ __/ / /__/ /_/ / /  / /   / ____/ 
-/_/   /____/\____/_/  /_/   /_/      
-```
-
-![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Release](https://img.shields.io/badge/release-v1.1.0--alpha-purple.svg)
-
-**HArmony: Universal Influenza HA Numbering, Antigenic Annotation, and Comparative Evolution Engine.**
+Universal Influenza Hemagglutinin Numbering, Antigenic Annotation, and Comparative Evolution Engine.
 
 ## Overview
 
-Mapping diverse Influenza A Hemagglutinin (HA) subtypes (for example H5 or H7) onto a universal coordinate framework is difficult because insertions and deletions shift apparent positions between strains and clades.
+Mapping highly divergent Influenza A Hemagglutinin (HA) subtypes (e.g., H5, H7, H9) onto a universal coordinate framework is inherently challenging. Lineage-specific insertions and deletions (indels) continuously shift the apparent topological positions of critical amino acids, breaking traditional sequence alignments.
 
-HArmony addresses this problem by using a pre-trained Profile Hidden Markov Model (HMM) to align each sequence onto a common structural grid (H3/Aichi/68-compatible numbering). This provides robust, alignment-independent coordinate mapping that remains stable across subtype diversity.
+HArmony resolves this sequence-to-structure alignment problem by deploying pre-trained Profile Hidden Markov Models (pHMMs). This architecture anchors highly variable input sequences to a standardized structural grid based on the mature H3 (Aichi/68) nomenclature. This approach yields robust, alignment-independent coordinate mapping, enabling high-resolution comparative immunology and evolutionary tracking across the entire viral phylogeny.
 
-## Key Features
+## Key Capabilities
 
-- **Universal Grid**: Maps any HA sequence to H3-compatible coordinates with HMMER-derived confidence scores.
-- **Antigenic Intelligence**: Annotates residues with Burke and Smith (1994) antigenic sites (A-E) and structural domains (HA1/HA2).
-- **Glycan Tracking**: Detects N-linked glycosylation motifs (`N-X-[S/T]`) and reports de novo gain/loss behavior.
-- **Pathogenicity Diagnostics**: Evaluates HA1/HA2 cleavage region polybasic signatures and furin-like motifs to classify HPAI-like vs LPAI-like patterns.
-- **Evolutionary Compare Mode**: Performs pairwise coordinate-level comparison to track structural and antigenic drift.
-- **Publication Plots**: Generates linear protein feature maps and comparison visualizations using matplotlib.
+**Universal Structural Grid:** Transposes any input HA sequence into H3-standardized coordinates, leveraging HMMER-derived posterior probabilities to assign per-residue confidence scores.
 
-## Installation (Conda Recommended)
+**Antigenic Topology Mapping:** Automatically annotates structural domains (HA1/HA2) and maps residues against the canonical Burke and Smith (1994) antigenic sites (A-E) on the globular head.
+
+**Glycan Shield Profiling:** Detects classical N-linked glycosylation sequons (N-X-[S/T], where X != P) and computes de novo gain/loss dynamics relative to the reference state or a paired sequence.
+
+**Pathogenicity Motif Diagnostics:** Scans the HA1/HA2 junction for polybasic cleavage site (PBCS) expansions and furin-recognition motifs to robustly stratify Highly Pathogenic (HPAI) versus Low Pathogenic (LPAI) signatures.
+
+**Evolutionary Compare Module:** Executes coordinate-level pairwise comparative analyses to precisely quantify structural drift, receptor-binding site (RBS) mutations, and shifts in glycan shielding.
+
+**Publication-Grade Visualizations:** Automates the generation of linear protein feature maps and stacked mirror alignments using matplotlib, detailing mutational hotspots directly on the structural topology.
+
+## Installation
+
+HArmony relies on the HMMER suite (`hmmsearch`) for probabilistic modeling. We highly recommend using Conda/Mamba for installation, as it automatically resolves all Python and C-binary dependencies via Bioconda.
 
 ```bash
-git clone https://github.com/yourusername/harmony.git
+# 1. Clone the repository
+git clone https://github.com/franzdietzmeyer/harmony.git
 cd harmony
+
+# 2. Create the isolated Conda environment
 conda env create -f environment.yml
+
+# 3. Activate the environment
 conda activate harmony-env
 ```
 
-Conda installs the required HMMER binaries (including `hmmsearch`) through Bioconda, so no manual binary path configuration is needed.
+Note: The environment installation handles the HMMER binaries automatically. No manual `$PATH` configuration is required.
 
 ## Usage Guide
 
-### 1) `map` - Batch Processing
+### 1. Batch Mapping & Annotation (`map`)
+
+Process single sequences or large FASTA libraries to generate standardized coordinate grids, antigenic labels, and diagnostic statistics.
 
 ```bash
-harmony map --input my_sequences.fasta --output-dir ./results --ref H3 --plot
+harmony map --input data/my_sequences.fasta --output-dir ./results --ref H3 --plot
 ```
 
-This command generates:
-- detailed per-residue mapping output (CSV/JSON depending on options),
-- a run-level summary CSV,
-- linear structural map PNG files when `--plot` is enabled.
+Generates:
 
-### 2) `compare` - Pairwise Analysis
+- Detailed per-sequence coordinate matrices (CSV/JSON).
+- Run-level summary report (aggregating HPAI/LPAI status and glycan counts).
+- High-resolution linear structural maps (`.png`).
+
+### 2. Evolutionary Pairwise Analysis (`compare`)
+
+Perform a coordinate-locked comparison between two sequences (e.g., an ancestral strain vs. a newly emerged outbreak isolate) to track molecular drift.
 
 ```bash
-harmony compare --seq1 old_h5.fa --seq2 new_h5.fa --ref H3 --plot
+harmony compare --seq1 data/ancestral_h5.fa --seq2 data/emerged_h5.fa --ref H3 --plot
 ```
 
-This produces:
-- a coordinate-level comparison report (`comparison_report.csv`),
-- a mirrored stacked comparison figure highlighting mutations and glycan shifts.
+Generates:
+
+- A `comparison_report.csv` detailing the specific residue substitutions, topological locations, and glycan shifts.
+- A mirrored, stacked visualization highlighting mutational connectors between the two viral states.
 
 ## Understanding the Output
 
-Example mapping columns:
+The core output of HArmony is the coordinate matrix. Below is an example of the generated data structure:
 
-| Column | Meaning |
-|---|---|
-| `H3_Coord` | Reference coordinate assigned by HArmony |
-| `Residue` | Amino acid at mapped position |
-| `Site` | Antigenic site annotation (A-E or None) |
-| `Glycan` | Glycosylation status annotation |
-| `Confidence` | HMM alignment confidence (0.0-1.0) |
+```text
+H3_Coord  Residue  Domain  Antigenic_Site  Glycan_Status      Pathogenicity      Confidence
+156       K        HA1     Site B          None               -                 0.99
+158       N        HA1     Site B          N-Glyc (Gained)    -                 0.98
+329a      R        HA1     None            None               HPAI (Polybasic)  0.95
+```
 
 ## Citation
 
-If you use HArmony in your research, please cite:
+If HArmony facilitates your research, please cite:
 
-**Dietzmeyer, F. (2026). HArmony: Universal HA Numbering and Antigenic Site Mapping.**
+Dietzmeyer, F. (2026). HArmony: Universal Influenza Hemagglutinin Numbering and Antigenic Site Mapping. (Manuscript in preparation). GitHub repository: https://github.com/franzdietzmeyer/harmony
