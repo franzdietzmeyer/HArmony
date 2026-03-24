@@ -83,3 +83,7 @@ H3_Coord  Residue  Domain  Antigenic_Site  Glycan_Status      Pathogenicity     
 If HArmony facilitates your research, please cite:
 
 Dietzmeyer, F. (2026). HArmony: Universal Influenza Hemagglutinin Numbering and Antigenic Site Mapping. (Manuscript in preparation). GitHub repository: https://github.com/franzdietzmeyer/harmony
+
+## License
+
+This project is licensed under the **Open Science Protector (GNU GPLv3)** license. See `LICENSE` for the full text and terms.

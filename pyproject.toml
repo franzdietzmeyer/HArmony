@@ -8,6 +8,10 @@ version = "0.1.0"
 description = "High-throughput Influenza A HA renumbering to H3 coordinates via Profile HMM."
 readme = "README.md"
 requires-python = ">=3.10"
+license = {file = "LICENSE"}
+classifiers = [
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+]
 dependencies = [
     "pyhmmer",
     "biopython",
