@@ -53,14 +53,19 @@ WAIT_DURATION_SECONDS = 15.0
 def display_welcome() -> None:
     """Render HArmony logo and subtitle."""
     logo_lines = [
-        "    __  _____                                 ",
-        "   / / / /   |  _________ ___  ____  ____  __  __",
-        "  / /_/ / /| | / ___/ __ `__ \\/ __ \\/ __ \\/ / / /",
-        " / __  / ___ |/ /  / / / / / / /_/ / / / / /_/ / ",
-        "/_/ /_/_/  |_/_/  /_/ /_/ /_/\\____/_/ /_/\\__, /  ",
-        "                                        /____/   ",
+        "██   ██  █████  ██████  ███    ███  ██████  ███    ██ ██    ██ ",
+        "██   ██ ██   ██ ██   ██ ████  ████ ██    ██ ████   ██  ██  ██  ",
+        "███████ ███████ ██████  ██ ████ ██ ██    ██ ██ ██  ██   ████   ",
+        "██   ██ ██   ██ ██   ██ ██  ██  ██ ██    ██ ██  ██ ██    ██    ",
+        "██   ██ ██   ██ ██   ██ ██      ██  ██████  ██   ████    ██    ",
     ]
-    colors = ["cyan", "bright_cyan", "deep_sky_blue1", "dodger_blue1", "blue", "bright_blue"]
+    colors = [
+        "cyan",
+        "bright_cyan",
+        "deep_sky_blue1",
+        "dodger_blue1",
+        "blue",
+    ]
     text = Text(justify="left")
     logo_width = max(cell_len(line) for line in logo_lines)
     for line, color in zip(logo_lines, colors):
