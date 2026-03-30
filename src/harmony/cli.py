@@ -37,6 +37,8 @@ from .formatter import (
 from .io_handler import ensure_output_dir, load_sequences, safe_name
 from .mapper import generate_maps
 from .viz import generate_protein_map, plot_comparison
+from .tracker import track_ancestor_against_descendants
+from .visualizer import write_tracking_scripts
 
 app = typer.Typer(
     help=(
@@ -74,7 +76,7 @@ def display_welcome() -> None:
     console.print(Align.center(text))
     console.print(
         Align.center(
-            "[bold white]v1.1.0-alpha | Hemagglutinin Numbering Engine [/]"
+            "[bold white]v1.1.0-alpha[/]"
         )
     )
 
@@ -278,6 +280,12 @@ def main(
         exists=True,
         help="FASTA file or directory of FASTA files (default map mode).",
     ),
+    test: bool = typer.Option(
+        False,
+        "--test",
+        hidden=True,
+        help="Dev tool: render UI mock output and exit.",
+    ),
     output_dir: Path | None = typer.Option(
         None,
         "--output-dir",
@@ -318,6 +326,74 @@ def main(
     """Default CLI behavior: run `map` when no subcommand is provided."""
     if ctx.invoked_subcommand is not None:
         return
+    if test:
+        display_welcome()
+        with Progress(
+            TextColumn("[progress.description]{task.description}"),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            BarColumn(
+                style="bright_black",
+                complete_style="bright_blue",
+                finished_style="blue",
+                pulse_style="cyan",
+            ),
+            MofNCompleteColumn(),
+            TimeRemainingColumn(),
+            console=console,
+        ) as progress:
+            steps = int(WAIT_DURATION_SECONDS / 0.5) if wait else 12
+            task = progress.add_task("UI test: processing sequences", total=steps)
+            for _ in range(steps):
+                time.sleep(0.5 if wait else 0.06)
+                progress.advance(task)
+
+        console.print("[bold]Mock outputs[/bold]")
+        console.print(f"- mutation_tracking_matrix.csv → [dim]./evolution_results/[/dim]")
+        console.print(f"- mutation_tracking.pml → [dim]./evolution_results/[/dim]")
+        console.print(f"- mutation_tracking.cxc → [dim]./evolution_results/[/dim]")
+        console.print("")
+        print_run_summary(
+            [
+                {
+                    "Query_ID": "A/Vietnam/1203/2004",
+                    "Source_File": "data/Vietnam.fasta",
+                    "Total_Events": 565,
+                    "Matches": 542,
+                    "Insertions": 12,
+                    "Deletions": 11,
+                    "Mean_Confidence": 0.93,
+                    "Total_Glycans_Found": 9,
+                    "Pathogenicity_Score": "HPAI (Polybasic)",
+                    "Site_A_Count": 3,
+                    "Site_B_Count": 5,
+                    "Site_C_Count": 1,
+                    "Site_D_Count": 2,
+                    "Site_E_Count": 0,
+                    "Site_None_Count": 531,
+                },
+                {
+                    "Query_ID": "Descendant_1",
+                    "Source_File": "data/H15.fasta",
+                    "Total_Events": 560,
+                    "Matches": 545,
+                    "Insertions": 6,
+                    "Deletions": 9,
+                    "Mean_Confidence": 0.91,
+                    "Total_Glycans_Found": 8,
+                    "Pathogenicity_Score": "LPAI (Monobasic)",
+                    "Site_A_Count": 1,
+                    "Site_B_Count": 2,
+                    "Site_C_Count": 0,
+                    "Site_D_Count": 1,
+                    "Site_E_Count": 1,
+                    "Site_None_Count": 541,
+                },
+            ],
+            console,
+        )
+        console.print("")
+        print_citation_panel()
+        raise typer.Exit(code=0)
     if input is None or output_dir is None:
         raise typer.BadParameter(
             "Default mode requires --input and --output-dir. "
@@ -486,6 +562,90 @@ def compare_cmd(
         f"{result['seq2_id']}={result['cleavage_motif_seq2']}"
     )
     console.print(f"[green]Done.[/green] Wrote comparison outputs to [bold]{output_dir}[/bold]")
+    if not quiet:
+        print_citation_panel()
+
+
+@app.command("track", context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
+def track_cmd(
+    ctx: typer.Context,
+    ancestor: Path = typer.Option(..., "--ancestor", exists=True, help="FASTA with a single ancestral sequence."),
+    descendants: Path = typer.Option(
+        ...,
+        "--descendants",
+        exists=True,
+        help=(
+            "Descendants input: either (1) one multi-FASTA file, (2) a directory of FASTA files, "
+            "or (3) a single FASTA file followed by extra FASTA paths (e.g. shell glob expansion)."
+        ),
+    ),
+    ref: str = typer.Option("H3", "--ref", help="Reference subtype coordinate system (default: H3)."),
+    output_dir: Path = typer.Option(..., "--output-dir", help="Directory to write outputs."),
+    quiet: bool = typer.Option(False, "--quiet", help="Suppress logo output."),
+) -> None:
+    """Track one ancestor against multiple descendants.
+
+    Writes:
+      - mutation_tracking_matrix.csv
+      - mutation_tracking.pml (PyMOL)
+      - mutation_tracking.cxc (ChimeraX)
+    """
+    if not quiet:
+        display_welcome()
+    output_dir = ensure_output_dir(output_dir)
+    try:
+        ensure_hmmer_available()
+    except Exception as exc:
+        console.print(f"[red]Initialization error:[/red] {exc}")
+        raise typer.Exit(code=1)
+
+    try:
+        # Build delta-filtered mutation matrix and reuse mapping outputs for visualization.
+        desc_path = descendants
+        extra_desc = [Path(a) for a in getattr(ctx, "args", [])]
+        if extra_desc:
+            # Shell glob like data/*.fasta expands into extra args; merge into one multi-FASTA.
+            from Bio import SeqIO
+
+            descendant_files: list[Path] = [desc_path, *extra_desc]
+            records = []
+            for p in descendant_files:
+                if not p.exists():
+                    raise FileNotFoundError(f"Descendant file not found: {p}")
+                if p.is_dir():
+                    raise ValueError(
+                        f"Descendants path {p} is a directory; pass it directly as --descendants {p}"
+                    )
+                records.extend(list(SeqIO.parse(str(p), "fasta")))
+            if not records:
+                raise ValueError("No descendant FASTA records found.")
+            merged = output_dir / "descendants_merged.fasta"
+            SeqIO.write(records, str(merged), "fasta")
+            desc_path = merged
+
+        df, anc_seq, anc_rows, _desc_names, desc_seqs, desc_rows = track_ancestor_against_descendants(
+            ancestor_fasta=ancestor,
+            descendants_fasta=desc_path,
+            ref=ref,
+        )
+        out_matrix = output_dir / "mutation_tracking_matrix.csv"
+        df.to_csv(out_matrix, index=False)
+        ref_u = ref.upper()
+
+        write_tracking_scripts(
+            matrix_df=df,
+            output_dir=output_dir,
+            ref=ref_u,
+            ancestor_sequence=anc_seq,
+            ancestor_mapped_rows=anc_rows,
+            descendant_sequences=desc_seqs,
+            descendant_mapped_rows=desc_rows,
+        )
+    except Exception as exc:
+        console.print(f"[red]Tracking failed:[/red] {exc}")
+        raise typer.Exit(code=1)
+
+    console.print(f"[green]Done.[/green] Wrote tracking outputs to [bold]{output_dir}[/bold]")
     if not quiet:
         print_citation_panel()
 

@@ -25,10 +25,61 @@ SITE_COLORS = {
     "Site E": "#c026d3",
 }
 
+STRUCTURAL_REGION_COLORS = {
+    "Signal Peptide": "#d1d5db",
+    "HA1": "#dbeafe",
+    "Cleavage Site": "#ef4444",
+    "Fusion Peptide": "#f97316",
+    "HA2 Stalk": "#bbf7d0",
+    "Transmembrane Domain": "#4b5563",
+    "Cytoplasmic Tail": "#a855f7",
+}
+
+H3_REGION_RANGES = {
+    "Signal Peptide": [(0, 0)],
+    "HA1": [(1, 326)],
+    "Cleavage Site": [(327, 330)],
+    "Fusion Peptide": [(330, 352)],
+    "HA2 Stalk": [(353, 513)],
+    "Transmembrane Domain": [(514, 540)],
+    "Cytoplasmic Tail": [(541, 800)],
+}
+
 
 def _coord_to_int(coord: str) -> int | None:
     match = re.match(r"(\d+)", str(coord))
     return int(match.group(1)) if match else None
+
+
+def _merge_ranges(coords: list[int]) -> list[tuple[int, int]]:
+    if not coords:
+        return []
+    out: list[tuple[int, int]] = []
+    start = prev = coords[0]
+    for c in coords[1:]:
+        if c <= prev + 1:
+            prev = c
+            continue
+        out.append((start, prev))
+        start = prev = c
+    out.append((start, prev))
+    return out
+
+
+def _structural_ranges(rows: list[dict], coord_col: str, ref_subtype: str) -> dict[str, list[tuple[int, int]]]:
+    by_region: dict[str, list[int]] = {}
+    for row in rows:
+        region = str(row.get("Structural_Region", "")).strip()
+        coord = _coord_to_int(row.get(coord_col, ""))
+        if not region or coord is None:
+            continue
+        by_region.setdefault(region, []).append(coord)
+    if not by_region and ref_subtype.upper() == "H3":
+        return H3_REGION_RANGES
+    out: dict[str, list[tuple[int, int]]] = {}
+    for region, coords in by_region.items():
+        out[region] = _merge_ranges(sorted(set(coords)))
+    return out
 
 
 def generate_protein_map(
@@ -55,6 +106,20 @@ def generate_protein_map(
     # Background protein bar
     main_lw = 12
     site_lw = main_lw * 1.2  # 20% taller than backbone bar
+
+    # Structural region shading track.
+    region_ranges = _structural_ranges(rows, coord_col, ref_subtype)
+    for region, ranges in region_ranges.items():
+        color = STRUCTURAL_REGION_COLORS.get(region)
+        if not color:
+            continue
+        for start, end in ranges:
+            if end < cmin or start > cmax:
+                continue
+            s = max(start, cmin)
+            e = min(end, cmax)
+            ax.axvspan(s, e, color=color, alpha=0.18, zorder=0)
+
     ax.hlines(y=0, xmin=cmin, xmax=cmax, color="#d1d5db", linewidth=main_lw, zorder=1)
 
     # Site overlays use Burke & Smith H3 coordinates.
@@ -143,8 +208,22 @@ def generate_protein_map(
     ax.spines["right"].set_visible(False)
     ax.grid(axis="x", linestyle="--", alpha=0.3)
 
-    legend_items = [Patch(color=SITE_COLORS[s], label=s) for s in ("Site A", "Site B", "Site C", "Site D", "Site E")]
-    ax.legend(handles=legend_items, loc="upper center", ncol=5, frameon=False, bbox_to_anchor=(0.5, -0.18))
+    site_legend = [Patch(color=SITE_COLORS[s], label=s) for s in ("Site A", "Site B", "Site C", "Site D", "Site E")]
+    region_legend = [
+        Patch(color=STRUCTURAL_REGION_COLORS[r], label=r)
+        for r in (
+            "Signal Peptide",
+            "HA1",
+            "Cleavage Site",
+            "Fusion Peptide",
+            "HA2 Stalk",
+            "Transmembrane Domain",
+            "Cytoplasmic Tail",
+        )
+    ]
+    leg1 = ax.legend(handles=site_legend, loc="upper center", ncol=5, frameon=False, bbox_to_anchor=(0.5, -0.16))
+    ax.add_artist(leg1)
+    ax.legend(handles=region_legend, loc="upper center", ncol=4, frameon=False, bbox_to_anchor=(0.5, -0.29))
 
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -188,6 +267,19 @@ def plot_comparison(
     y1, y2 = 0.65, 0.05
     main_lw = 11
     site_lw = main_lw * 1.2
+
+    region_ranges = _structural_ranges(rows1 + rows2, coord_col, ref_subtype)
+    for region, ranges in region_ranges.items():
+        color = STRUCTURAL_REGION_COLORS.get(region)
+        if not color:
+            continue
+        for start, end in ranges:
+            if end < cmin or start > cmax:
+                continue
+            s = max(start, cmin)
+            e = min(end, cmax)
+            ax.axvspan(s, e, color=color, alpha=0.14, zorder=0)
+
     ax.hlines(y1, cmin, cmax, color="#d1d5db", linewidth=main_lw, zorder=1)
     ax.hlines(y2, cmin, cmax, color="#d1d5db", linewidth=main_lw, zorder=1)
 
@@ -246,8 +338,22 @@ def plot_comparison(
     ax.spines["right"].set_visible(False)
     ax.grid(axis="x", linestyle="--", alpha=0.3)
 
-    legend_items = [Patch(color=SITE_COLORS[s], label=s) for s in ("Site A", "Site B", "Site C", "Site D", "Site E")]
-    ax.legend(handles=legend_items, loc="upper center", ncol=5, frameon=False, bbox_to_anchor=(0.5, -0.12))
+    site_legend = [Patch(color=SITE_COLORS[s], label=s) for s in ("Site A", "Site B", "Site C", "Site D", "Site E")]
+    region_legend = [
+        Patch(color=STRUCTURAL_REGION_COLORS[r], label=r)
+        for r in (
+            "Signal Peptide",
+            "HA1",
+            "Cleavage Site",
+            "Fusion Peptide",
+            "HA2 Stalk",
+            "Transmembrane Domain",
+            "Cytoplasmic Tail",
+        )
+    ]
+    leg1 = ax.legend(handles=site_legend, loc="upper center", ncol=5, frameon=False, bbox_to_anchor=(0.5, -0.10))
+    ax.add_artist(leg1)
+    ax.legend(handles=region_legend, loc="upper center", ncol=4, frameon=False, bbox_to_anchor=(0.5, -0.24))
 
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)

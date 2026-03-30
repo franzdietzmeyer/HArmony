@@ -120,10 +120,52 @@ class HarmonyMapper:
         if isinstance(raw, dict):
             coord = str(raw.get("coord", default["coord"]))
             site = str(raw.get("site", "None"))
-            domain = str(raw.get("domain", "Unknown"))
-            return {"coord": coord, "site": site, "domain": domain}
+            structural_region = self._structural_region_for_coord(coord)
+            return {"coord": coord, "site": site, "domain": structural_region}
         # Backward compatibility with legacy string-only maps.
-        return {"coord": str(raw), "site": "None", "domain": "Unknown"}
+        coord = str(raw)
+        return {"coord": coord, "site": "None", "domain": self._structural_region_for_coord(coord)}
+
+    def _structural_region_for_coord(self, coord: str) -> str:
+        """Assign high-resolution structural regions from mapped H3 coordinates.
+
+        H3 coordinate mapping:
+          - Signal Peptide (SP): coords < 1
+          - HA1: 1-329 (excluding cleavage site if explicitly modeled)
+          - Cleavage Site: boundary bridge residues around HA1/HA2 (H3 327-330)
+          - Fusion Peptide (FP): HA2 1-23  => H3 330-352
+          - HA2 Stalk: HA2 24-184         => H3 353-513
+          - Transmembrane Domain (TM): HA2 185-211 => H3 514-540
+          - Cytoplasmic Tail (CT): HA2 212+ => H3 541+
+
+        For non-H3 reference maps, falls back to coarse HA1/HA2.
+        """
+
+        numeric = self._coord_numeric(str(coord))
+        if numeric is None:
+            return "Unknown"
+
+        if self.ref_subtype != "H3":
+            return "HA1" if numeric < 330 else "HA2"
+
+        if numeric < 1:
+            return "Signal Peptide"
+
+        # Cleavage loop spans end of HA1 and start of HA2 and may include insertions (e.g., 329a).
+        if 327 <= numeric <= 330:
+            return "Cleavage Site"
+
+        if numeric <= 329:
+            return "HA1"
+
+        ha2_pos = numeric - 329  # H3 330 == HA2 1
+        if 1 <= ha2_pos <= 23:
+            return "Fusion Peptide"
+        if 24 <= ha2_pos <= 184:
+            return "HA2 Stalk"
+        if 185 <= ha2_pos <= 211:
+            return "Transmembrane Domain"
+        return "Cytoplasmic Tail"
 
     @staticmethod
     def _confidence_value(conf_char: str) -> float:

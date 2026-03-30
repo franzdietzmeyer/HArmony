@@ -82,12 +82,47 @@ Generates:
 - A `comparison_report.csv` detailing the specific residue substitutions, topological locations, and glycan shifts.
 - A mirrored, stacked visualization highlighting mutational connectors between the two viral states.
 
+### 3. Multi-Sequence Evolutionary Tracking (`track`)
+
+Compare one ancestral sequence against **multiple** descendant sequences, producing a delta-filtered mutation matrix plus 3D structural macros for PyMOL and ChimeraX.
+
+```bash
+harmony track --ancestor data/ancestor.fa --descendants data/descendants.fa --ref H3 --output-dir ./tracking_out
+```
+
+If your descendants are split across many FASTA files, you can also use a directory or a shell glob:
+
+```bash
+harmony track --ancestor data/Vietnam.fasta --descendants data/ --output-dir ./evolution_results
+harmony track --ancestor data/Vietnam.fasta --descendants data/H15.fasta data/*.fasta --output-dir ./evolution_results
+```
+
+Generates in `./tracking_out`:
+
+- `mutation_tracking_matrix.csv`: Master Mutation Matrix anchored on `H3_Coord` (only positions where **any** descendant differs from the ancestor).
+- `mutation_tracking.pml`: PyMOL macro highlighting all mutated residues in red (reference HA colored light grey).
+- `mutation_tracking.cxc`: ChimeraX macro highlighting mutations (red), Burke & Smith antigenic sites A–E (pastel, semi-transparent), and **gained glycans** (bright blue).
+
+Run the structural macros:
+
+- **PyMOL**: open/load your reference HA structure (e.g., PDB `4FNK`), then run:
+
+```text
+@mutation_tracking.pml
+```
+
+- **ChimeraX**: open/load your reference HA structure, then run:
+
+```text
+open mutation_tracking.cxc
+```
+
 ## Understanding the Output
 
 The core output of HArmony is the coordinate matrix. Below is an example of the generated data structure:
 
 ```text
-H3_Coord  Residue  Domain  Antigenic_Site  Glycan_Status      Pathogenicity      Confidence
+H3_Coord  Residue  Structural_Region  Antigenic_Site  Glycan_Status      Pathogenicity      Confidence
 156       K        HA1     Site B          None               -                 0.99
 158       N        HA1     Site B          N-Glyc (Gained)    -                 0.98
 329a      R        HA1     None            None               HPAI (Polybasic)  0.95

@@ -112,6 +112,9 @@ def compare_sequences(seq1: Path, seq2: Path, ref: str = "H3", only_deltas: bool
         else:
             relative = "None"
         site = str(r1.get("Site", r2.get("Site", "None")))
+        structural_region = str(
+            r1.get("Structural_Region", r2.get("Structural_Region", "Unknown"))
+        )
 
         mutation = res1 != res2
         glycan_shift = relative in {"Lost in Seq 2", "Gained in Seq 2"}
@@ -131,6 +134,7 @@ def compare_sequences(seq1: Path, seq2: Path, ref: str = "H3", only_deltas: bool
                 "Seq1_Res": res1,
                 "Seq2_Res": res2,
                 "Site": site,
+                "Structural_Region": structural_region,
                 "Seq1_Glyco_Status": seq1_glyco_status,
                 "Seq2_Glyco_Status": seq2_glyco_status,
                 "Relative_Glycan_Status": relative,
@@ -175,6 +179,7 @@ def write_comparison_report(path: Path, rows: List[dict], ref_subtype: str) -> N
         "Seq1_Res",
         "Seq2_Res",
         "Site",
+        "Structural_Region",
         "Seq1_Glyco_Status",
         "Seq2_Glyco_Status",
         "Relative_Glycan_Status",
